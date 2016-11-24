@@ -35,7 +35,6 @@ for usages like
 
 
 # Usage
-// after jquery
-<script src="render.js"></script>
-
-ce(obj); // will create an jquery element of our json obj
+# $(function(){
+    jhson(obj); // will create an jquery element of our json obj
+# });
