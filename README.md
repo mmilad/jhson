@@ -40,6 +40,9 @@ for usages like
 # $(function(){
 ### will create an jquery element of our json obj
     jhson.ce(obj);
+
+### will update our json obj and view
+
     var updateObj = {
         target: obj,
         identifier: "searchIndex",
@@ -48,7 +51,5 @@ for usages like
             html: "custom text"
         }
     };
-
-### will update our json obj and view
     jhson.update(updateObj);            // searches the object with identifier value "searchIndex" to replace it
 # });
