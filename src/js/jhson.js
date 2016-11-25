@@ -35,6 +35,9 @@ WAE.UTIL.ELEMENT = function () {
             if (config.properties) {
                 element.prop('properties', config.properties);
             }
+            if (config.identifier) {
+                element.attr('data-identifier', config.identifier);
+            }
             if (config.children) {
                 config.children.forEach(function (child) {
                     element.append(SELF.ce(child));
@@ -44,6 +47,32 @@ WAE.UTIL.ELEMENT = function () {
         }
     };
 
-    return this.ce;
+
+    this.update = function (config) {
+        var foundObj = findOnAt(config.on, config.target);
+        var newObj = $.extend(foundObj, config.set);
+        $("[data-identifier='" + config.on + "']").replaceWith(SELF.ce(newObj));
+    }
+    function findOnAt(on, at) {
+        var targ;
+        if(at.identifier) {
+            if(at.identifier === on) {
+                targ = at;
+            } else {
+                for(var i in at.children){
+                    return findOnAt(on, at.children[i]);
+                }
+            }
+        } else {
+            for(var i in at.children){
+                targ = findOnAt(on, at.children[i]);
+                if(targ){
+                    break;
+                }
+            }
+        }
+        return targ;
+    }
+    return this;
 };
 var jhson = new WAE.UTIL.ELEMENT();
