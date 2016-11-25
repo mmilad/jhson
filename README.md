@@ -9,13 +9,15 @@ simple project to create jquery obj from json
         style: "width: 10px;",         // set attributes.style
         data-custom: "foobar"          // set etc...
     },
+    
     class: "custom_class",             // add a class
     html: "my html text",              // appends text before first child element
     value: "my value text",            // set value
     children: [
         {
             tag: "span",               // first child tag name
-            html: "my_span",            // first child html
+            html: "my_span",           // first child html
+            identifier: "searchIndex"  // set an unique identifier to control update
         },
         {
             tag: "input",               // second child tag name
@@ -36,5 +38,17 @@ for usages like
 
 # Usage
 # $(function(){
-    jhson(obj); // will create an jquery element of our json obj
+### will create an jquery element of our json obj
+    jhson.ce(obj);
+    var updateObj = {
+        target: obj,
+        identifier: "searchIndex",
+        set: {
+            tag: "div",
+            html: "custom text"
+        }
+    };
+
+### will update our json obj and view
+    jhson.update(updateObj);            // searches the object with identifier value "searchIndex" to replace it
 # });
