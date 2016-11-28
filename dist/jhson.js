@@ -5,8 +5,15 @@ WAE.UTIL.ELEMENT = function () {
 
     "user strict";
 
-    var SELF = this
-    STATE_METHOD = "edit",
+    var SELF = this,
+        MODEL_OBJECT,
+        STATE_METHOD = "edit";
+    
+    this.init = function (config){
+        SELF.setModel(config);
+        SELF.create();
+    };
+
     this.ce = function (config) {
         if ((typeof config) === "string") {
             return $(document.createElement(config));
@@ -14,7 +21,16 @@ WAE.UTIL.ELEMENT = function () {
             var element;
             if (!config.tag) { config.tag = "div"; }
             element = $(document.createElement(config.tag));
-
+            config.element = element;
+            if (config.config) {
+                if(config.config.widget){
+                    if(config.config.widget_config){
+                        element[config.config.widget](config.config.widget_config);
+                    } else {
+                        element[config.config.widget]();
+                    }
+                }
+            }
             if (config.value) {
                 element.val(config.value);
             }
@@ -30,7 +46,13 @@ WAE.UTIL.ELEMENT = function () {
                 element.addClass(config.class);
             }
             if (config.events) {
-                element.prop('events', config.events);
+                for(var i in config.events){
+                    if(config.events[i].target){
+                        element.on(config.events[i].event, config.events[i].target, config.events[i].callback);
+                    } else {
+                        element.on(config.events[i].event, config.events[i].callback);
+                    }
+                }
             }
             if (config.properties) {
                 element.prop('properties', config.properties);
@@ -46,33 +68,47 @@ WAE.UTIL.ELEMENT = function () {
             return element;
         }
     };
-
-
-    this.update = function (config) {
-        var foundObj = findOnAt(config.on, config.target);
-        var newObj = $.extend(foundObj, config.set);
-        $("[data-identifier='" + config.on + "']").replaceWith(SELF.ce(newObj));
+    this.create = function (){
+        $('body').append(SELF.ce(MODEL_OBJECT));
     }
-    function findOnAt(on, at) {
+    this.setModel = function(obj){
+        MODEL_OBJECT = obj;
+    };
+
+    this.getModel = function(){
+        return MODEL_OBJECT;
+    };
+    
+    this.update = function (config) {
+        if(!config.on){config.on = MODEL_OBJECT;}
+        var foundObj = findOnAt(config.on, config.identifier);
+        var newObj = $.extend(foundObj, config.set);
+        if(newObj.element){
+            newObj.element.replaceWith(SELF.ce(newObj));
+        }
+    };
+    
+    function findOnAt(on, identifier) {
         var targ;
-        if(at.identifier) {
-            if(at.identifier === on) {
-                targ = at;
+        if(on.identifier) {
+            if(on.identifier === identifier) {
+                targ = on;
             } else {
-                for(var i in at.children){
-                    return findOnAt(on, at.children[i]);
+                for(var i in on.children){
+                    return findOnAt(on.children[i], identifier);
                 }
             }
         } else {
-            for(var i in at.children){
-                targ = findOnAt(on, at.children[i]);
+            for(var i in on.children){
+                targ = findOnAt(on.children[i], identifier);
                 if(targ){
                     break;
                 }
             }
         }
         return targ;
-    }
+    };
+
     return this;
 };
 var jhson = new WAE.UTIL.ELEMENT();
