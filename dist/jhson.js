@@ -1,76 +1,90 @@
-var WAE = {
-    UTIL: {}
-};
-WAE.UTIL.ELEMENT = function () {
+var WAE_JHSON_CONFIG = function () {
 
     "user strict";
 
     var SELF = this,
-        MODEL_OBJECT,
-        STATE_METHOD = "edit";
+        MODEL_OBJECT;
     
     this.init = function (config){
         SELF.setModel(config);
-        SELF.create();
+        document.body.appendChild(SELF.ce(MODEL_OBJECT));
     };
 
     this.ce = function (config) {
-        if ((typeof config) === "string") {
-            return $(document.createElement(config));
-        } else if (config !== null && typeof config === 'object') {
-            var element;
-            if (!config.tag) { config.tag = "div"; }
-            element = $(document.createElement(config.tag));
-            config.element = element;
-            if (config.config) {
-                if(config.config.widget){
-                    if(config.config.widget_config){
-                        element[config.config.widget](config.config.widget_config);
-                    } else {
-                        element[config.config.widget]();
-                    }
+        config = configToElement(config);
+        
+        config.element.jhson = config
+        config.ae = function (addConfig){
+            config.children.push(addConfig);
+            config.element.appendChild(SELF.ce(addConfig));
+        };
+        config.find = function (identifier){
+            var arg = SELF.find(this, identifier);
+            return arg;
+        };
+        config.findInParent = function (identifier){
+            var parent = this.element.parentNode.jhson;
+            var arg = SELF.find(parent, identifier);
+            return arg;
+        };
+        config.get = function (identifier){
+            return this[identifier];
+        };
+
+        config.update = function (addConfig){
+            addConfig = SELF.ce(addConfig);
+            var oldElement = this.element;
+            var newConfig = merge(this, addConfig.jhson);
+            addConfig = SELF.ce(newConfig).jhson;
+            oldElement.parentNode.replaceChild(SELF.ce(newConfig), oldElement);
+            return this;
+        };
+        if (config.config) {
+            if(config.config.widget){
+                if(config.config.widget_config){
+                    // config.element[config.config.widget](config.config.widget_config);
+                } else {
+                    // config.element[config.config.widget]();
                 }
             }
-            if (config.value) {
-                element.val(config.value);
-            }
-            if (config.html) {
-                element.html(config.html);
-            }
-            if (config.attributes) {
-                for (var attr in config.attributes) {
-                    element.attr(attr, config.attributes[attr]);
-                }
-            }
-            if (config.class) {
-                element.addClass(config.class);
-            }
-            if (config.events) {
-                for(var i in config.events){
-                    if(config.events[i].target){
-                        element.on(config.events[i].event, config.events[i].target, config.events[i].callback);
-                    } else {
-                        element.on(config.events[i].event, config.events[i].callback);
-                    }
-                }
-            }
-            if (config.properties) {
-                element.prop('properties', config.properties);
-            }
-            if (config.identifier) {
-                element.attr('data-identifier', config.identifier);
-            }
-            if (config.children) {
-                config.children.forEach(function (child) {
-                    element.append(SELF.ce(child));
-                });
-            }
-            return element;
+        } else {
+            config.config = {};
         }
+        if (config.value) {
+            config.element.value = config.value;
+        }
+        if (config.html) {
+            config.element.innerHTML = config.html;
+        }
+        if (config.attributes) {
+            for (var attr in config.attributes) {
+                config.element.setAttribute(attr, config.attributes[attr]);
+            }
+        }
+        if (config.class) {
+            if(config.element.className !== ""){config.class = " "+config.class;}
+            config.element.className += config.class;
+        }
+        if (config.events) {
+            for(var i in config.events){
+                    config.element.addEventListener(config.events[i].event, config.events[i].callback);
+            }
+        }
+        if (config.properties) {
+            config.properties = config.properties;
+        }
+        if (config.id) {
+            config.element.setAttribute('data-identifier', config.id);
+        }
+        if (config.children) {
+            config.children.forEach(function (child) {
+                config.element.appendChild(SELF.ce(child));
+            });
+        } else {
+            config.children = [];
+        }
+            return config.element;
     };
-    this.create = function (){
-        $('body').append(SELF.ce(MODEL_OBJECT));
-    }
     this.setModel = function(obj){
         MODEL_OBJECT = obj;
     };
@@ -81,34 +95,69 @@ WAE.UTIL.ELEMENT = function () {
     
     this.update = function (config) {
         if(!config.on){config.on = MODEL_OBJECT;}
-        var foundObj = findOnAt(config.on, config.identifier);
-        var newObj = $.extend(foundObj, config.set);
+        var foundObj = SELF.find(config.on, config.id);
+        var newObj = merge(foundObj, config.set);
         if(newObj.element){
             newObj.element.replaceWith(SELF.ce(newObj));
         }
     };
     
-    function findOnAt(on, identifier) {
+    this.find = function (on, identifier) {
         var targ;
-        if(on.identifier) {
-            if(on.identifier === identifier) {
-                targ = on;
-            } else {
-                for(var i in on.children){
-                    return findOnAt(on.children[i], identifier);
-                }
-            }
+        if(on.id === identifier) {
+            targ = on;
         } else {
             for(var i in on.children){
-                targ = findOnAt(on.children[i], identifier);
-                if(targ){
+                targ = SELF.find(on.children[i], identifier);
+                if(targ !== undefined){
                     break;
                 }
             }
-        }
+        }        
         return targ;
     };
+    function merge(objA, objB){
+        for(var i in objB){
+            objA[i] = objB[i];
+        }
+        return objA;
+    }
 
+    function configToElement(config){
+        if(!config.jhson){
+            if ((typeof config) === "string") {
+                config.element = document.createElement(config);
+            } else if (typeof config === 'object') {
+                if(config.nodeName){
+                    var isElement = config;
+                    config = {
+                        tag: isElement.nodeName.toLowerCase(),
+                        element: isElement
+                    };
+                    if(isElement.value !== ""){
+                        config.value = isElement.value;
+                    }
+                    if(isElement.childNodes.length !== 0){
+                        config.children = [];
+                        isElement.childNodes.forEach(function(child){
+                            config.children.push(SELF.ce(child));
+                        });
+                    }
+                } else {
+                    if (!config.tag) { config.tag = "div"; }
+                    config.element = document.createElement(config.tag);
+                }
+            } else if(config === undefined){
+                config = {
+                    tag: 'div',
+                    element: document.createElement('div')
+                }
+            }
+        } else {
+            config = config.jhson;
+        }
+        return config;
+    }
     return this;
 };
-var jhson = new WAE.UTIL.ELEMENT();
+var jhson = new WAE_JHSON_CONFIG();
